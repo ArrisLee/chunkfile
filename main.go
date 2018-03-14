@@ -15,11 +15,12 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	filesize := handler.Size
-	log.Println("FileSize:", filesize)
+
 	var buffersize int64
 	var parts int
-	if filesize < MAX_CHUNK_SIZE {
+	//filesize := handler.Size
+	log.Println("FileSize:", handler.Size)
+	if filesize := handler.Size; filesize < MAX_CHUNK_SIZE {
 		buffersize = filesize
 		parts = 1
 	} else {
