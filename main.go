@@ -5,13 +5,8 @@ import (
 	"net/http"
 )
 
-type Cinfo struct {
-	index int //order
-	parts int //length
-}
-
-//8MB maxium chunk size
-const MAX_CHUNK_SIZE = 8 * 1024 * 1024
+//Need to be set to 8*1024*1024 = 8mb
+const MAX_CHUNK_SIZE = 2
 
 func upload(w http.ResponseWriter, r *http.Request) {
 	file, handler, err := r.FormFile("file")
@@ -19,13 +14,9 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	file, err = handler.Open()
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	defer file.Close()
 	filesize := handler.Size
-	log.Println(filesize)
+	log.Println("FileSize:", filesize)
 	var buffersize int64
 	var parts int
 	if filesize < MAX_CHUNK_SIZE {
@@ -36,24 +27,22 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		parts = roundup(buffersize, filesize)
 	}
 	buffer := make([]byte, buffersize)
-	//key: int; part number, e.g. 1 means 1st part
-	//value: []byte; a fix-sized chunk of data read from file bytestream
-	fileChunks := make(map[Cinfo][]byte)
-	var ci Cinfo
-	ci.parts = parts
-	log.Println(parts)
+
+	/*
+		key: int; part number, e.g. 1 means the 1st part
+		value: []byte; a fix-sized chunk of data read from file bytestream
+	*/
+	fileChunks := make(map[int][]byte)
+	log.Println("Chunks:", parts)
 	for i := 1; i <= parts; i++ {
 		br, err := file.Read(buffer)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		ci.index = i
-		fileChunks[ci] = buffer[:br]
+		fileChunks[i] = buffer[:br]
 	}
-	//log.Println("bytes read:", br)
-	//log.Println("bytestream:", buffer[:br])
-	log.Println(len(fileChunks))
+	log.Println(fileChunks)
 }
 
 func roundup(a int64, b int64) int {
@@ -65,5 +54,5 @@ func roundup(a int64, b int64) int {
 
 func main() {
 	http.HandleFunc("/upload", upload)
-	log.Fatal(http.ListenAndServe(":9090", nil))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
