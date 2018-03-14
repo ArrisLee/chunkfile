@@ -18,7 +18,6 @@ func upload(w http.ResponseWriter, r *http.Request) {
 
 	var buffersize int64
 	var parts int
-	//filesize := handler.Size
 	log.Println("FileSize:", handler.Size)
 	if filesize := handler.Size; filesize < MAX_CHUNK_SIZE {
 		buffersize = filesize
