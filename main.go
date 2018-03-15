@@ -7,7 +7,7 @@ import (
 )
 
 //Need to be set to 8*1024*1024 = 8mb
-const MAX_CHUNK_SIZE = 3
+const MAX_CHUNK_SIZE = 8 * 1024 * 1024
 
 func upload(w http.ResponseWriter, r *http.Request) {
 	file, handler, err := r.FormFile("file")
@@ -33,7 +33,6 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	*/
 	fileChunks := make(map[int][]byte)
 	log.Println("Chunks:", parts)
-
 	for i := 1; i <= parts; i++ {
 		buf := make([]byte, buffersize)
 		b, err := file.Read(buf)
@@ -51,16 +50,12 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	makeFile(fileChunks, handler.Size, handler.Filename, parts)
 }
 
-func roundup(a int64, b int64) int {
-	if b%a > 0 {
-		return int(b/a) + 1
-	}
-	return int(b / a)
-}
-
+//private testing function
 func makeFile(fileChunks map[int][]byte, filesize int64, fileName string, parts int) {
-	path := "./target/" + fileName
-	newfile, _ := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)
+	dirpath := "./target/"
+	os.Mkdir(dirpath, 0777)
+	filepath := dirpath + fileName
+	newfile, _ := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY, 0666)
 	var buffer []byte
 	for i := 1; i <= parts; i++ {
 		for k, v := range fileChunks {
@@ -72,6 +67,13 @@ func makeFile(fileChunks map[int][]byte, filesize int64, fileName string, parts 
 	//log.Println(buffer)
 	newfile.Write(buffer)
 	newfile.Close()
+}
+
+func roundup(a int64, b int64) int {
+	if b%a > 0 {
+		return int(b/a) + 1
+	}
+	return int(b / a)
 }
 
 func main() {
