@@ -3,10 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 )
 
 //Need to be set to 8*1024*1024 = 8mb
-const MAX_CHUNK_SIZE = 2
+const MAX_CHUNK_SIZE = 3
 
 func upload(w http.ResponseWriter, r *http.Request) {
 	file, handler, err := r.FormFile("file")
@@ -15,7 +16,6 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-
 	var buffersize int64
 	var parts int
 	log.Println("FileSize:", handler.Size)
@@ -26,7 +26,6 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		buffersize = MAX_CHUNK_SIZE
 		parts = roundup(buffersize, filesize)
 	}
-	buffer := make([]byte, buffersize)
 
 	/*
 		key: int; part number, e.g. 1 means the 1st part
@@ -34,15 +33,22 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	*/
 	fileChunks := make(map[int][]byte)
 	log.Println("Chunks:", parts)
+
 	for i := 1; i <= parts; i++ {
-		br, err := file.Read(buffer)
+		buf := make([]byte, buffersize)
+		b, err := file.Read(buf)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		fileChunks[i] = buffer[:br]
+		// TODO: send fileChunks[i] through codec.msg
+		fileChunks[i] = buf[:b]
+		//log.Println("Length: ", len(fileChunks[i]))
+		//log.Println("Index: ", i)
+		//log.Println("Value: ", fileChunks[i])
 	}
-	log.Println(fileChunks)
+	//log.Println(fileChunks)
+	makeFile(fileChunks, handler.Size, handler.Filename, parts)
 }
 
 func roundup(a int64, b int64) int {
@@ -50,6 +56,22 @@ func roundup(a int64, b int64) int {
 		return int(b/a) + 1
 	}
 	return int(b / a)
+}
+
+func makeFile(fileChunks map[int][]byte, filesize int64, fileName string, parts int) {
+	path := "./target/" + fileName
+	newfile, _ := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)
+	var buffer []byte
+	for i := 1; i <= parts; i++ {
+		for k, v := range fileChunks {
+			if k == i {
+				buffer = append(buffer, v...)
+			}
+		}
+	}
+	//log.Println(buffer)
+	newfile.Write(buffer)
+	newfile.Close()
 }
 
 func main() {
