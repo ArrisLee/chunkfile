@@ -24,7 +24,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		parts = 1
 	} else {
 		buffersize = MAX_CHUNK_SIZE
-		parts = roundup(buffersize, filesize)
+		parts = Roundup(buffersize, filesize)
 	}
 
 	/*
