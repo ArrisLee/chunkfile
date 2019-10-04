@@ -69,7 +69,7 @@ func makeFile(fileChunks map[int][]byte, filesize int64, fileName string, parts 
 	newfile.Close()
 }
 
-func roundup(a int64, b int64) int {
+func Roundup(a int64, b int64) int {
 	if b%a > 0 {
 		return int(b/a) + 1
 	}
