@@ -1,0 +1,23 @@
+on randomLetters(n)
+    set letters to "abcdefghijklmnopqrstuvwxyz"
+    set output to ""
+    repeat n times
+        set output to output & (some item of (characters of letters))
+    end repeat
+    return output
+end randomLetters
+
+repeat
+    set randomText to randomLetters(5)
+
+    tell application "System Events"
+        keystroke randomText
+        delay 0.3
+        repeat 5 times
+            key code 51 -- delete key
+            delay 0.05
+        end repeat
+    end tell
+
+    delay 120 -- 等待 2 分钟
+end repeat
